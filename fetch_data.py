@@ -1,18 +1,27 @@
+# pylint: disable=too-few-public-methods
 """Imports"""
 from time import sleep
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 
-driver = webdriver.Chrome()
-driver.get('http://books.toscrape.com/')
-sleep(3)
 
-def navegation_page():
-    """Navigate through pages"""
-    page_content = driver.page_source
-    site = BeautifulSoup(page_content, 'html.parser')
-    books = site.find_element('xpath', '//*[@id="default"]/div/div/div/div/section/div[2]/ol/li[1]')
-    print(books.prettify())
-#navegation_page()
+class ScrapBooks:
+    """Scrap books from page"""
+    def __init__(self):
+        self.url_path = "http://books.toscrape.com/"
+        self.site_books = {}
+        self.browser = webdriver.Chrome(ChromeDriverManager().install())
+        self.browser.get(self.url_path)
+        self.soup = BeautifulSoup(self.browser.page_source, 'html')
+        self.books = None
+
+    def fetch_books(self):
+        """Fetch books from page"""
+        sleep(3)
+        self.books = self.soup.find('li', attrs={'class':'col-xs-6 col-sm-4 col-md-3 col-lg-3'})
+        print(self.books.prettify())
+
+
+scrap = ScrapBooks()
+scrap.fetch_books()
