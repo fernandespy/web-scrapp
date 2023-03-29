@@ -1,4 +1,4 @@
-"""Imports"""
+"""Scrape books from a website using Selenium and BeautifulSoup."""
 from time import sleep
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
@@ -7,89 +7,68 @@ import pandas as pd
 from settings import CATEGORIES
 
 class ScrapBooks:
-    """Scrap books from page"""
+    """A class for scraping book data from a website."""
+    # Disabling the "too many instance attributes" warning because eight is reasonable in this case.
     # pylint: disable=too-many-instance-attributes
-    # Eight is reasonable in this case.
     def __init__(self):
+        """Create a new instance of the ScrapBooks class."""
         self.csv_filename = 'books.csv'
         self.site_books = []
         self.dataframe_books = None
-        self.browser = None
-        self.options = None
-        self.soup = None
-        self.books = None
-        self.books_name = None
-        self.books_category = None
-        self.books_stars = None
-        self.books_price = None
-        self.books_is_stock = None
+        self.browser_obj = None
+        self.book_obj = None
 
-    def navegate_page(self, category_url):
-        """Navegate to pages"""
+        # Browser and options objects
+        self.options = webdriver.ChromeOptions()
+        self.options.add_argument("--headless")
+        self.browser_obj = webdriver.Chrome(
+            ChromeDriverManager().install(),
+            chrome_options=self.options)
+
+    def navigate_page(self, category_url):
+        """Navigate to the specified category URL and scrape the page."""
         try:
-            self.options = webdriver.ChromeOptions()
-            self.options.add_argument("--headless")
-            self.browser = webdriver.Chrome(
-                ChromeDriverManager().install(),
-                chrome_options=self.options)
-            self.browser.get(category_url)
+            self.browser_obj.get(category_url)
             sleep(2)
-            self.soup = BeautifulSoup(self.browser.page_source, 'html.parser')
+            self.soup = BeautifulSoup(self.browser_obj.page_source, 'html.parser')
         except NameError as error:
             print(f"Erro initializing WebDriver: {error}")
 
     def fetch_books(self):
-        """Fetch books from page"""
+        """Scrapes the books from the website and saves the data to a CSV file."""
         try:
             sleep(3)
-            self.books = self.soup.findAll(
+            books = self.soup.findAll(
                 'li', attrs={'class': 'col-xs-6 col-sm-4 col-md-3 col-lg-3'}
                 )
-            for book in self.books:
-                # name of book
-                self.books_name = book.find('h3').find('a', attrs={'title': True})
-                self.books_name = self.books_name['title']
+            for book in books:
+                # Book object with specific information
+                self.book_obj = {
+                    'name': book.find('h3').find('a', attrs={'title': True})['title'],
+                    'category': self.soup.find('div', attrs={'class': 'page-header action'}).find('h1').text,
+                    'stars': book.find('p', class_='star-rating')['class'][1],
+                    'price': book.find('p', attrs={'class': 'price_color'}).text,
+                    'is_stock': book.find('p', attrs={'class': 'instock availability'}).text.strip()
+                }
+                self.site_books.append(list(self.book_obj.values()))
 
-                # category of book
-                self.books_category = self.soup.find(
-                    'div', attrs={'class': 'page-header action'}).find('h1')
-                self.books_category = self.books_category.text
-
-                # stars of book
-                self.books_stars = book.find('p', class_='star-rating')
-                self.books_stars = self.books_stars['class'][1]
-
-                # price of book
-                self.books_price = book.find('p', attrs={'class': 'price_color'})
-                self.books_price = self.books_price.text
-
-                # availability of book
-                self.books_is_stock = book.find('p', attrs={'class': 'instock availability'})
-                self.books_is_stock = self.books_is_stock.text.strip()
-
-                self.site_books.append(
-                    [self.books_name,
-                    self.books_category,
-                    self.books_stars,
-                    self.books_price,
-                    self.books_is_stock])
-                self.dataframe_books = pd.DataFrame(self.site_books, columns=[
-                    'Book Name',
-                    'Book Category',
-                    'Book Star Rating',
-                    'Book Price',
-                    'Book in Stock'])
-                self.dataframe_books.to_csv(self.csv_filename, index=False)
+            self.dataframe_books = pd.DataFrame(self.site_books, columns=[
+                'Book Name',
+                'Book Category',
+                'Book Star Rating',
+                'Book Price',
+                'Book in Stock'])
+            self.dataframe_books.to_csv(self.csv_filename, index=False)
         except NameError as error:
             print(f"Erro initializing fetch_books: {error}")
 
     def run(self):
-        """Fetch all books from categories urls list"""
+        """Scrape all books from each category URL in CATEGORIES."""
         try:
             for category in CATEGORIES:
-                self.navegate_page(category)
+                self.navigate_page(category)
                 self.fetch_books()
-                print(f"Fetch Books: {self.books_category}")
+                print(f"Fetched books from category: {self.book_obj['category']}")
         except NameError as error:
             print(f"Erro initializing run function: {error}")
 
