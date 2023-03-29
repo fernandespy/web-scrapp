@@ -8,6 +8,11 @@ import pandas as pd
 class ScrapBooks:
     """Scrap books from page"""
     def __init__(self):
+        self.csv_filename = 'books.csv'
+        self.categories =  [
+        'http://books.toscrape.com/catalogue/category/books/mystery_3/index.html',
+        'http://books.toscrape.com/catalogue/category/books/science-fiction_16/index.html'
+    ]
         self.url_path = "http://books.toscrape.com/"
         self.site_books = []
         self.df_books = None
@@ -21,12 +26,10 @@ class ScrapBooks:
         self.books_price = None
         self.books_is_stock = None
 
-    def navegate_page(self):
+    def navegate_page(self, category_url):
         """Navegate to pages"""
         self.browser = webdriver.Chrome(ChromeDriverManager().install())
-        self.browser.get(self.url_path)
-        self.next_page = self.browser.find_element(
-            'xpath', '//*[@id="default"]/div/div/div/aside/div[2]/ul/li/ul/li[1]/a').click()
+        self.browser.get(category_url)
         sleep(2)
         self.soup = BeautifulSoup(self.browser.page_source, 'html.parser')
 
@@ -68,8 +71,15 @@ class ScrapBooks:
                 'Book Star Rating',
                 'Book Price',
                 'Book in Stock'])
-            self.df_books.to_csv('books.csv', index=False)
+            self.df_books.to_csv(self.csv_filename, index=False)
+            
+    def run(self):
+        """Fetch all books from categories urls list"""
+        for category in self.categories:
+            self.navegate_page(category)
+            self.fetch_books()
 
-scrap = ScrapBooks()
-scrap.navegate_page()
-scrap.fetch_books()
+
+if __name__ == '__main__':
+    scrap = ScrapBooks()
+    scrap.run()
