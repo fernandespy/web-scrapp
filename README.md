@@ -29,6 +29,7 @@ To use this project, follow these steps:
 4. Run `scrape_books.py` in the project directory to scrape the books. The script will save the data to a CSV file named books.csv in the project directory.
 5. Create a ``.env`` file and add the constants:
 `DB_HOST='yourhost', DB_NAME='yourdbname', DB_USER='yourdbuser', DB_PASSWORD='yourdbpassword', DB_PORT='yourdbport'`.
+6. Run ``db_manager.py`` in the project directory to save the data to PostgreSQL."
 
 ## Files
 
