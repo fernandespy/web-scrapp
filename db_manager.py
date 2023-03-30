@@ -42,14 +42,12 @@ class PostgresConnector:
         try:
             df_books = pd.read_csv(csv_file)
             for index, row in df_books.iterrows():
-                # verifica se já existe uma linha com os mesmos valores que deseja inserir
                 self.cursor.execute(
                     "SELECT COUNT(*) FROM books WHERE name = %s AND category = %s AND stars = %s AND price = %s AND is_stock = %s",
                     (row['Book Name'], row['Book Category'], row['Book Star Rating'], row['Book Price'], row['Book in Stock'])
                 )
                 row_count = self.cursor.fetchone()[0]
                 if row_count == 0:
-                    # se não existir, insere os dados
                     self.cursor.execute(
                         "INSERT INTO books (name, category, stars, price, is_stock) VALUES (%s, %s, %s, %s, %s);",
                         (row['Book Name'], row['Book Category'], row['Book Star Rating'], row['Book Price'], row['Book in Stock'])
